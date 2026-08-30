@@ -1,9 +1,19 @@
-export default function auth(req, res, next) {
-  const token = req.headers.authorization?.replace('Bearer ', '');
+import { verifyToken } from '../lib/jwt.js';
 
-  if (!token) {
-    return res.status(401).json({ message: 'Unauthorized' });
+export const protect = (req, res, next) => {
+  const header = req.headers.authorization;
+
+  if (!header || !header.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'No token provided' });
   }
 
-  next();
-}
+  const token = header.split(' ')[1];
+
+  try {
+    const decoded = verifyToken(token);
+    req.userId = decoded.userId;
+    next();
+  } catch {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+};
