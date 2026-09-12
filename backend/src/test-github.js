@@ -1,12 +1,16 @@
-import { getFileTree, getKeyFiles } from './lib/github.js';
+import { analyzeRepo } from './core/analyzer.js';
 
-const testRepo = 'https://github.com/expressjs/express';
+const test = async (label, url, branch) => {
+  console.log(`\n=== ${label} ===`);
+  const result = await analyzeRepo(url, branch);
+  if (!result.success) {
+    console.log('Failed:', result.error);
+    return;
+  }
+  console.log('Analysis:', JSON.stringify(result.analysis, null, 2));
+  console.log('Reasoning steps:', result.reasoning.length);
+};
 
-console.log('Testing file tree fetch...');
-const tree = await getFileTree(testRepo, 'master');
-console.log(`Found ${tree.length} files`);
-console.log('Sample files:', tree.slice(0, 10));
-
-console.log('\nTesting key files fetch...');
-const keyFiles = await getKeyFiles(testRepo, 'master');
-console.log('Key files found:', Object.keys(keyFiles));
+await test('Flask repo', 'https://github.com/pallets/flask', 'main');
+await test('Express repo', 'https://github.com/expressjs/express', 'master');
+await test('Unknown stack', 'https://github.com/torvalds/linux', 'master');
