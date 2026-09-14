@@ -1,6 +1,7 @@
 import { analyzeRepo } from './core/analyzer.js';
 import { runInferenceEngine } from './core/inferenceEngine.js';
 import { generateYaml } from './core/yamlGenerator.js';
+import { explainDecision } from './core/explainability.js';
 
 const test = async (label, url, branch) => {
   console.log(`\n=== ${label} ===`);
@@ -24,6 +25,10 @@ const test = async (label, url, branch) => {
     return;
   }
   console.log('Generated YAML:\n' + pipeline.yaml);
+
+  const explanation = explainDecision(result, inference, pipeline);
+  console.log('Explanation summary:', JSON.stringify(explanation.summary, null, 2));
+  console.log('Recommendations:', JSON.stringify(explanation.recommendations, null, 2));
 };
 
 await test('Flask repo', 'https://github.com/pallets/flask', 'main');
