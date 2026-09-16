@@ -1,21 +1,31 @@
-const { Server } = require('@modelcontextprotocol/sdk/server/index.js');
-const { StdioServerTransport } = require('@modelcontextprotocol/sdk/server/stdio.js');
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 
-const server = new Server(
+import { registerAnalyzeRepo } from './tools/analyzeRepo.js';
+import { registerGeneratePipeline } from './tools/generatePipeline.js';
+import { registerExplainDecision } from './tools/explainDecision.js';
+import { registerSuggestOptimizations } from './tools/suggestOptimizations.js';
+import { registerCustomizePipeline } from './tools/customizePipeline.js';
+
+const server = new McpServer(
     { name: 'cicd-generator', version: '1.0.0' },
     { capabilities: { tools: {} } }
 );
 
 // Register tools
-require('./tools/analyzeRepo')(server);
-require('./tools/generatePipeline')(server);
-require('./tools/explainDecision')(server);
-require('./tools/suggestOptimizations')(server);
-require('./tools/customizePipeline')(server);
+registerAnalyzeRepo(server);
+registerGeneratePipeline(server);
+registerExplainDecision(server);
+registerSuggestOptimizations(server);
+registerCustomizePipeline(server);
 
 async function main() {
     const transport = new StdioServerTransport();
     await server.connect(transport);
+    console.error('cicd-generator MCP server running on stdio');
 }
 
-main();
+main().catch((err) => {
+    console.error('Fatal error starting MCP server:', err);
+    process.exit(1);
+});
