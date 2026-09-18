@@ -12,6 +12,16 @@ await client.connect(transport);
 const { tools } = await client.listTools();
 console.log('Registered tools:', tools.map((t) => t.name));
 
+const analyzed = await client.callTool({
+  name: 'analyze_repo',
+  arguments: { repoUrl: 'https://github.com/pallets/flask', branch: 'main' }
+});
+
+console.log('--- analyze_repo result ---');
+for (const item of analyzed.content) {
+  console.log(item.text);
+}
+
 const result = await client.callTool({
   name: 'generate_pipeline',
   arguments: { repoUrl: 'https://github.com/pallets/flask', branch: 'main' }
@@ -48,6 +58,26 @@ const deleted = await client.callTool({
 
 console.log('--- customize_pipeline (delete lint step) result ---');
 for (const item of deleted.content) {
+  console.log(item.text);
+}
+
+const explained = await client.callTool({
+  name: 'explain_decision',
+  arguments: { repoUrl: 'https://github.com/pallets/flask', branch: 'main' }
+});
+
+console.log('--- explain_decision result ---');
+for (const item of explained.content) {
+  console.log(item.text);
+}
+
+const optimizations = await client.callTool({
+  name: 'suggest_optimizations',
+  arguments: { repoUrl: 'https://github.com/pallets/flask', branch: 'main' }
+});
+
+console.log('--- suggest_optimizations result ---');
+for (const item of optimizations.content) {
   console.log(item.text);
 }
 
