@@ -6,6 +6,7 @@ import { runInferenceEngine } from '../core/inferenceEngine.js';
 import { generateYaml } from '../core/yamlGenerator.js';
 import { explainDecision } from '../core/explainability.js';
 import { recommendOptimizations } from '../core/recommender.js';
+import { customizePipeline } from '../core/pipelineCustomizer.js';
 
 const router = Router();
 
@@ -57,6 +58,15 @@ router.post('/generate', protect, async (req, res) => {
 
     if (saveError) throw saveError;
 
+    // Log this generation as a history entry so the repo has an auditable trail
+    await supabase.from('history').insert({
+      repo_id: repoId,
+      user_id: req.userId,
+      action: 'ADD',
+      step_name: 'pipeline_generated',
+      after_state: { yaml: pipeline.yaml }
+    });
+
     res.status(201).json({
       pipeline: savedPipeline,
       analysis: analysis.analysis,
@@ -64,6 +74,79 @@ router.post('/generate', protect, async (req, res) => {
       explanationSummary: explanation.summary,
       recommendations: optimizations.recommendations
     });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/pipeline/:repoId — apply an add/edit/delete step customization to
+// the repo's most recently generated pipeline, persist the new version, and
+// log the change to history
+router.put('/:repoId', protect, async (req, res) => {
+  const { operation, stepName, step } = req.body;
+
+  if (!operation || !['add', 'edit', 'delete'].includes(operation)) {
+    return res.status(400).json({ error: 'operation must be one of add, edit, delete' });
+  }
+  if (!stepName) return res.status(400).json({ error: 'stepName is required' });
+
+  try {
+    const { data: repo, error: repoError } = await supabase
+      .from('repos')
+      .select('id')
+      .eq('id', req.params.repoId)
+      .eq('user_id', req.userId)
+      .single();
+
+    if (repoError || !repo) return res.status(404).json({ error: 'Repo not found' });
+
+    const { data: existingPipeline, error: fetchError } = await supabase
+      .from('pipelines')
+      .select('*')
+      .eq('repo_id', req.params.repoId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (fetchError || !existingPipeline) {
+      return res.status(404).json({ error: 'No pipeline found for this repo' });
+    }
+
+    let customized;
+    try {
+      customized = customizePipeline(existingPipeline.yaml_content, operation, stepName, step);
+    } catch (customizeErr) {
+      return res.status(400).json({ error: customizeErr.message });
+    }
+
+    const { data: savedPipeline, error: saveError } = await supabase
+      .from('pipelines')
+      .insert({
+        repo_id: req.params.repoId,
+        yaml_content: customized.yaml,
+        reasoning: existingPipeline.reasoning
+      })
+      .select('*')
+      .single();
+
+    if (saveError) throw saveError;
+
+    const { data: historyEntry, error: historyError } = await supabase
+      .from('history')
+      .insert({
+        repo_id: req.params.repoId,
+        user_id: req.userId,
+        action: operation.toUpperCase(),
+        step_name: stepName,
+        before_state: customized.beforeStep,
+        after_state: customized.afterStep
+      })
+      .select('*')
+      .single();
+
+    if (historyError) throw historyError;
+
+    res.status(200).json({ pipeline: savedPipeline, history: historyEntry });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
