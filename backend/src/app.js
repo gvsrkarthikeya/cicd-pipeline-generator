@@ -10,6 +10,7 @@ import authRoutes from './routes/auth.js';
 import reposRoutes from './routes/repos.js';
 import pipelineRoutes from './routes/pipeline.js';
 import historyRoutes from './routes/history.js';
+import publicRoutes from './routes/public.js';
 
 const app = express();
 app.use(express.json());
@@ -19,6 +20,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/repos', reposRoutes);
 app.use('/api/pipeline', pipelineRoutes);
 app.use('/api/history', historyRoutes);
+app.use('/api/public', publicRoutes);
 
 if (process.env.NODE_ENV === 'production') {
     const __filename = fileURLToPath(import.meta.url);

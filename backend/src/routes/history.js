@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { randomUUID } from 'crypto';
 import { protect } from '../middleware/auth.js';
 import supabase from '../lib/supabase.js';
 
@@ -44,6 +45,38 @@ router.post('/:repoId', protect, async (req, res) => {
 
     if (error) throw error;
     res.status(201).json({ history: data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/history/:historyId/share — generate (or return existing) a
+// public share_id for a history entry so it can be viewed without auth
+router.post('/:historyId/share', protect, async (req, res) => {
+  try {
+    const { data: entry, error: fetchError } = await supabase
+      .from('history')
+      .select('*')
+      .eq('id', req.params.historyId)
+      .eq('user_id', req.userId)
+      .single();
+
+    if (fetchError || !entry) return res.status(404).json({ error: 'History entry not found' });
+
+    if (entry.share_id) {
+      return res.json({ shareId: entry.share_id });
+    }
+
+    const shareId = randomUUID();
+
+    const { error: updateError } = await supabase
+      .from('history')
+      .update({ share_id: shareId })
+      .eq('id', req.params.historyId);
+
+    if (updateError) throw updateError;
+
+    res.status(201).json({ shareId });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
