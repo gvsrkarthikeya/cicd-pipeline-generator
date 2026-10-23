@@ -1,0 +1,332 @@
+{
+  "app": {
+    "name": "PipelineKit",
+    "homeAriaLabel": "PipelineKit home"
+  },
+  "account": {
+    "title": "Account",
+    "subtitle": "Manage your profile details and password.",
+    "profileTitle": "Profile",
+    "nameLabel": "Full Name",
+    "profileSaved": "Profile updated.",
+    "profileError": "Unable to update your profile.",
+    "passwordTitle": "Change Password",
+    "currentPasswordLabel": "Current Password",
+    "newPasswordLabel": "New Password",
+    "confirmNewPasswordLabel": "Confirm New Password",
+    "changePassword": "Change Password",
+    "passwordSaved": "Password changed successfully.",
+    "passwordError": "Unable to change your password.",
+    "passwordMismatch": "New passwords do not match.",
+    "saving": "Saving…"
+  },
+  "common": {
+    "logIn": "Log In",
+    "signUp": "Sign Up",
+    "logOut": "Log Out",
+    "cancel": "Cancel",
+    "view": "View",
+    "rerun": "Re-run",
+    "rerunning": "Running…",
+    "delete": "Delete",
+    "deleting": "Deleting…",
+    "edit": "Edit",
+    "save": "Save",
+    "analyzeRepo": "Analyze Repo",
+    "account": "Account"
+  },
+  "footer": {
+    "copyright": "© {year} PipelineKit Inc. All rights reserved.",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
+  },
+  "home": {
+    "hero": {
+      "titleLine1": "Analyze any GitHub repo and",
+      "titleLine2": "generate a CI/CD pipeline",
+      "subtitle": "Get explainable pipeline recommendations in minutes based on your detected dependencies.",
+      "getStarted": "Get Started",
+      "howItWorks": "See How It Works"
+    },
+    "preview": {
+      "eyebrow": "Interactive Preview",
+      "reasonsTitle": "Why this configuration?",
+      "tabs": [
+        {
+          "id": "node",
+          "label": "Node.js",
+          "title": "Generated Pipeline",
+          "fileName": "github-actions.yml",
+          "sampleYaml": "name: CI Pipeline\non: [push]\njobs:\n  build-and-test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v3\n      - name: Install dependencies\n        run: npm ci",
+          "reasons": [
+            "Detected package.json with npm workspace config",
+            "Dockerfiles found in root, adding parallel builds",
+            "Optimized build caching generated for node_modules"
+          ]
+        },
+        {
+          "id": "python",
+          "label": "Python",
+          "title": "Generated Pipeline",
+          "fileName": "github-actions.yml",
+          "sampleYaml": "name: CI Pipeline\non: [push]\njobs:\n  build-and-test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v3\n      - name: Set up Python\n        uses: actions/setup-python@v5\n      - name: Install dependencies\n        run: pip install -r requirements.txt",
+          "reasons": [
+            "Detected requirements.txt and pytest configuration",
+            "Flask app factory pattern recognized",
+            "Cached pip wheels generated for faster installs"
+          ]
+        },
+        {
+          "id": "docker",
+          "label": "Docker Monorepo",
+          "title": "Generated Pipeline",
+          "fileName": "github-actions.yml",
+          "sampleYaml": "name: CI Pipeline\non: [push]\njobs:\n  build-and-test:\n    runs-on: ubuntu-latest\n    strategy:\n      matrix:\n        service: [api, worker, web]\n    steps:\n      - uses: actions/checkout@v3\n      - name: Build ${{ matrix.service }}\n        run: docker build ./${{ matrix.service }}",
+          "reasons": [
+            "Multiple Dockerfiles detected across services",
+            "Monorepo structure mapped to a build matrix",
+            "Parallel builds configured per service"
+          ]
+        }
+      ]
+    },
+    "stacks": {
+      "eyebrow": "Supported Stacks & Frameworks",
+      "items": [
+        "React",
+        "Next",
+        "Angular",
+        "Vue",
+        "Express",
+        "Fastify",
+        "Flask",
+        "NestJS",
+        "Django",
+        "FastAPI",
+        "Node.js",
+        "Python",
+        "Java projects"
+      ]
+    },
+    "steps": {
+      "title": "Three Simple Steps",
+      "subtitle": "Pipeline generation doesn't have to be a dark art.",
+      "items": [
+        {
+          "number": "01",
+          "title": "Add Repo",
+          "body": "Connect your public or private GitHub repository securely."
+        },
+        {
+          "number": "02",
+          "title": "Analyze Stack",
+          "body": "Our engine automatically detects languages, frameworks, and tools."
+        },
+        {
+          "number": "03",
+          "title": "Generate Pipeline",
+          "body": "Receive clean YAML and explainable configs with clear reasoning."
+        }
+      ]
+    },
+    "features": {
+      "title": "Analyze any GitHub repo",
+      "subtitle": "Every feature optimized for clear wireframe setup",
+      "items": [
+        {
+          "title": "Multi-Language Detection",
+          "body": "Automatically handles hybrid or monorepo setups cleanly."
+        },
+        {
+          "title": "Explainable Reasoning",
+          "body": "Every rule comes with detailed rationale so you understand why."
+        },
+        {
+          "title": "Custom Pipeline Rules",
+          "body": "Inject specific organizational standards before generation."
+        },
+        {
+          "title": "One-Click Export",
+          "body": "Directly push generated files back to GitHub as PRs."
+        }
+      ]
+    }
+  },
+  "auth": {
+    "tagline": "Create explainable workflows in minutes",
+    "githubNote": "GitHub authorization is only needed when adding private repositories.",
+    "fullNameLabel": "Full Name",
+    "fullNamePlaceholder": "John Doe",
+    "emailLabel": "Email Address",
+    "emailPlaceholder": "johndoe@example.com",
+    "passwordLabel": "Password",
+    "confirmPasswordLabel": "Confirm Password",
+    "passwordPlaceholder": "••••••••••••",
+    "forgotPassword": "Forgot password?",
+    "login": {
+      "submit": "Login",
+      "submitting": "Logging in…",
+      "switchPrompt": "Don't have an account?",
+      "error": "Unable to log in. Please try again."
+    },
+    "signup": {
+      "submit": "Create Account",
+      "submitting": "Creating account…",
+      "switchPrompt": "Already have an account?",
+      "error": "Unable to create your account. Please try again.",
+      "passwordMismatch": "Passwords do not match."
+    },
+    "forgotPasswordPage": {
+      "subtitle": "Enter your account email and we'll generate a password reset link.",
+      "submit": "Send Reset Link",
+      "submitting": "Sending…",
+      "sent": "If an account exists for that email, a reset link has been generated.",
+      "devLinkLabel": "Reset link (dev mode — no email service configured)",
+      "devLinkNote": "Copy this link to reset the password. In production this would be emailed instead.",
+      "backToLogin": "Back to login",
+      "error": "Unable to process your request. Please try again."
+    },
+    "resetPasswordPage": {
+      "subtitle": "Choose a new password for your account.",
+      "newPasswordLabel": "New Password",
+      "confirmPasswordLabel": "Confirm New Password",
+      "submit": "Reset Password",
+      "submitting": "Resetting…",
+      "success": "Your password has been reset. Redirecting to login…",
+      "mismatch": "Passwords do not match.",
+      "missingToken": "This reset link is missing its token. Please request a new one.",
+      "error": "Unable to reset your password. The link may have expired."
+    }
+  },
+  "dashboard": {
+    "title": "Your Repositories",
+    "subtitle": "Manage and generate CI/CD configurations.",
+    "loading": "Loading repositories…",
+    "loadError": "Unable to load your repositories.",
+    "rerunError": "Unable to regenerate the pipeline.",
+    "deleteError": "Unable to delete the repository.",
+    "deleteTitle": "Delete {name}?",
+    "deleteConfirm": "Delete this repository and all of its pipeline history? This can't be undone.",
+    "visibilityPublic": "Public",
+    "visibilityPrivate": "Private",
+    "lastAnalyzed": "Last analyzed: {time}",
+    "addRepository": "Add Repository",
+    "searchPlaceholder": "Search repositories…",
+    "searchEmpty": "No repositories match your search."
+  },
+  "addRepo": {
+    "title": "Add Repository",
+    "subtitle": "Paste a GitHub repository URL to detect its stack and generate a pipeline.",
+    "urlLabel": "GitHub Repository URL",
+    "urlPlaceholder": "https://github.com/owner/repo",
+    "branchLabel": "Branch",
+    "branchOptional": "(optional)",
+    "branchPlaceholder": "main",
+    "visibilityLabel": "Visibility",
+    "visibilityPublic": "Public",
+    "visibilityPrivate": "Private",
+    "privateNotice": "Private repo detected — GitHub authorization required",
+    "authorizeGithub": "Authorize GitHub",
+    "tokenLabel": "GitHub Personal Access Token",
+    "tokenPlaceholder": "ghp_••••••••••••••••••••",
+    "tokenHint": "Needs contents:read access. Stored encrypted and used only for this repo.",
+    "tokenConnect": "Connect",
+    "tokenVerifying": "Verifying…",
+    "tokenConnected": "GitHub authorized",
+    "tokenInvalid": "Could not verify this token against the repository.",
+    "tokenNeedsUrl": "Enter the repository URL before connecting a token.",
+    "tokenRequired": "Authorize GitHub before analyzing a private repository.",
+    "submit": "Analyze Repository",
+    "submitting": "Analyzing…",
+    "error": "Unable to analyze this repository."
+  },
+  "repoDetail": {
+    "back": "Repositories",
+    "rerun": "Re-run Analysis",
+    "rerunning": "Running…",
+    "lastAnalyzed": "Last analyzed: {time}",
+    "loadError": "Unable to load this repository.",
+    "tabs": {
+      "overview": "Overview",
+      "pipeline": "Pipeline",
+      "history": "History",
+      "recommendations": "Recommendations"
+    },
+    "overview": {
+      "title": "Overview",
+      "subtitle": "Detected stack, confidence scores, and the reasoning trail used to generate the pipeline configuration.",
+      "stackTitle": "Detected Stack",
+      "confidenceTitle": "Confidence Scores",
+      "reasoningTitle": "Reasoning Trail",
+      "empty": "Run an analysis to see detected stack details."
+    },
+    "pipeline": {
+      "title": "Pipeline",
+      "subtitle": "Generated workflow, step flow, and editable configuration for the current pipeline.",
+      "stepFlowTitle": "Step Flow",
+      "yamlTitle": "Generated YAML",
+      "copy": "Copy",
+      "copied": "Copied",
+      "download": "Download",
+      "share": "Share",
+      "editorTitle": "Custom Step Editor",
+      "editorEditTitle": "Edit Step",
+      "manageTitle": "Manage Custom Steps",
+      "stepNameLabel": "Step Name",
+      "stepNamePlaceholder": "security-scan",
+      "commandLabel": "Command",
+      "commandPlaceholder": "npm run security-scan",
+      "positionLabel": "Position",
+      "positionAfter": "After {step}",
+      "addStep": "Add Step",
+      "adding": "Adding…",
+      "empty": "No pipeline generated yet. Run an analysis to generate one.",
+      "error": "Unable to update the pipeline."
+    },
+    "history": {
+      "title": "History",
+      "subtitle": "Recent changes to the pipeline configuration.",
+      "added": "Added",
+      "edited": "Edited",
+      "deleted": "Deleted",
+      "viewYaml": "View YAML",
+      "share": "Share",
+      "shared": "Link copied",
+      "revert": "Revert",
+      "reverting": "Reverting…",
+      "empty": "No changes have been made to this pipeline yet."
+    },
+    "recommendations": {
+      "title": "Recommendations",
+      "subtitle": "Automated suggestions for improving pipeline reliability, speed, and security.",
+      "severityHigh": "High",
+      "severityMedium": "Medium",
+      "severityLow": "Low",
+      "groupWarnings": "Warnings",
+      "groupSuggestions": "Suggestions",
+      "groupSecurity": "Security",
+      "apply": "Apply",
+      "applying": "Applying…",
+      "applied": "Applied",
+      "applyError": "Unable to apply this recommendation.",
+      "ignore": "Ignore",
+      "empty": "No recommendations — this pipeline already follows best practices."
+    }
+  },
+  "publicSnapshot": {
+    "title": "Shared Pipeline Snapshot",
+    "loading": "Loading snapshot…",
+    "notFound": "This shared snapshot could not be found. The link may be invalid or expired."
+  },
+  "repo": {
+    "notAnalyzed": "Not analyzed yet",
+    "unknownStack": "Unknown stack",
+    "never": "Never",
+    "justNow": "just now",
+    "minutesAgo": "{value}m ago",
+    "hoursAgo": "{value}h ago",
+    "daysAgo": "{value}d ago",
+    "monthsAgo": "{value}mo ago",
+    "yearsAgo": "{value}y ago"
+  }
+}
