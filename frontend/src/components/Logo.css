@@ -1,0 +1,32 @@
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-heading);
+}
+
+.logo-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-heading);
+  flex-shrink: 0;
+}
+
+.logo-word {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-heading);
+}
+
+.logo-sm .logo-word {
+  font-size: 15px;
+}
+
+.logo-md .logo-word {
+  font-size: 17px;
+}
+
+.logo-lg .logo-word {
+  font-size: 22px;
+}
