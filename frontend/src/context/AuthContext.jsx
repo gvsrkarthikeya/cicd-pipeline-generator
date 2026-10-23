@@ -55,6 +55,10 @@ export function AuthProvider({ children }) {
     setUser(null);
   }
 
+  function updateUser(partial) {
+    setUser((prev) => (prev ? { ...prev, ...partial } : prev));
+  }
+
   const value = {
     user,
     token,
@@ -63,6 +67,7 @@ export function AuthProvider({ children }) {
     signup,
     login,
     logout,
+    updateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
