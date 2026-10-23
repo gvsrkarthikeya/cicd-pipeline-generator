@@ -28,6 +28,25 @@ export const parseRepoUrl = (repoUrl) => {
     return { owner: parts[0], repo: parts[1] };
 };
 
+// Verify that a token actually grants access to a repo — used by the
+// "Authorize GitHub" flow in the Add Repo modal to confirm a pasted PAT is
+// real and valid before letting the user proceed, instead of trusting any
+// non-empty string.
+export const verifyRepoAccess = async (repoUrl, token) => {
+    const { owner, repo } = parseRepoUrl(repoUrl);
+    const octokit = getOctokit(token);
+
+    try {
+        const { data } = await octokit.rest.repos.get({ owner, repo });
+        return { valid: true, isPrivate: data.private };
+    } catch (err) {
+        if (err.status === 404) throw new Error('Repository not found or token lacks access');
+        if (err.status === 401) throw new Error('Invalid GitHub token');
+        throw new Error(`GitHub API error: ${err.message}`);
+    }
+};
+
+
 // Fetch complete file tree of a repo
 export const getFileTree = async (repoUrl, branch = 'main', token = null) => {
     const { owner, repo } = parseRepoUrl(repoUrl);
