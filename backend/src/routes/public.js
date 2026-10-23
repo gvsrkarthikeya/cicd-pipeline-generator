@@ -10,7 +10,7 @@ router.get('/pipeline/:shareId', async (req, res) => {
   try {
     const { data: entry, error } = await supabase
       .from('history')
-      .select('action, step_name, before_state, after_state, created_at')
+      .select('action, step_name, before_state, after_state, created_at, repos(repo_url)')
       .eq('share_id', req.params.shareId)
       .single();
 

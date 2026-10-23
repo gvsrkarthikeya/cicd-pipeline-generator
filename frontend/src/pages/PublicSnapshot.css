@@ -1,0 +1,12 @@
+.public-snapshot {
+  flex: 1;
+  padding: 48px 0 56px;
+}
+
+.public-snapshot-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  margin: 16px 0 20px;
+}

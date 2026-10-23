@@ -17,6 +17,7 @@ const performanceRecommendations = (analysis, decisions) => {
     if (decisions.language && CACHE_KEY[decisions.language]) {
         recs.push({
             type: 'performance',
+            title: 'Add dependency caching',
             suggestion: `Enable dependency caching (cache: '${CACHE_KEY[decisions.language]}') in the setup action to speed up repeated installs`,
             severity: 'medium'
         });
@@ -25,6 +26,7 @@ const performanceRecommendations = (analysis, decisions) => {
     if (decisions.language === 'java') {
         recs.push({
             type: 'performance',
+            title: 'Add dependency caching',
             suggestion: 'Enable dependency caching for Maven (~/.m2) or Gradle (~/.gradle/caches) to speed up builds',
             severity: 'medium'
         });
@@ -33,6 +35,7 @@ const performanceRecommendations = (analysis, decisions) => {
     if (decisions.deploymentStrategy === 'container') {
         recs.push({
             type: 'performance',
+            title: 'Cache Docker layers',
             suggestion: 'Use Docker layer caching (e.g. buildx with cache-from/cache-to) to speed up image builds',
             severity: 'medium'
         });
@@ -41,6 +44,7 @@ const performanceRecommendations = (analysis, decisions) => {
     if (analysis.projectType === 'backend' && decisions.language) {
         recs.push({
             type: 'performance',
+            title: 'Parallelize lint and test',
             suggestion: 'Consider running lint/test/build steps as parallel jobs instead of sequential steps to reduce total pipeline time',
             severity: 'low'
         });
@@ -56,9 +60,10 @@ const lintingRecommendations = (analysis) => {
     if (!analysis.linter) {
         recs.push({
             type: 'linting',
+            title: 'No linter detected',
             suggestion: analysis.language === 'python'
-                ? 'No linter detected — consider adding flake8 or ruff and a lint step'
-                : 'No linter detected — consider adding ESLint (and Prettier for formatting) and a lint step',
+                ? 'Your pipeline has no lint step. Consider adding flake8 or ruff to catch issues early.'
+                : 'Your pipeline has no lint step. Consider adding ESLint or Prettier to catch issues early.',
             severity: 'medium'
         });
     }
@@ -66,7 +71,8 @@ const lintingRecommendations = (analysis) => {
     if (!analysis.testFramework) {
         recs.push({
             type: 'linting',
-            suggestion: 'No test framework detected — consider adding one (Jest/Mocha/PyTest/JUnit) so CI can catch regressions',
+            title: 'No test framework detected',
+            suggestion: 'Consider adding one (Jest/Mocha/PyTest/JUnit) so CI can catch regressions',
             severity: 'high'
         });
     }
@@ -79,11 +85,13 @@ const securityRecommendations = (analysis, decisions) => {
     const recs = [
         {
             type: 'security',
+            title: 'Pin GitHub Actions to a commit SHA',
             suggestion: 'Pin third-party GitHub Actions to a full commit SHA instead of a mutable version tag (e.g. actions/checkout@<sha>) to prevent supply-chain tampering',
             severity: 'medium'
         },
         {
             type: 'security',
+            title: 'Scope workflow permissions',
             suggestion: 'Add an explicit `permissions:` block scoped to the minimum required (e.g. contents: read) instead of relying on default token permissions',
             severity: 'medium'
         }
@@ -92,7 +100,8 @@ const securityRecommendations = (analysis, decisions) => {
     if (decisions.deploymentStrategy === 'server' || decisions.deploymentStrategy === 'container') {
         recs.push({
             type: 'security',
-            suggestion: 'Store deployment credentials in GitHub Encrypted Secrets — never hardcode tokens/keys in the workflow file',
+            title: 'Avoid hardcoded tokens',
+            suggestion: 'Move API tokens to GitHub Secrets instead of embedding them in workflow files',
             severity: 'high'
         });
     }
@@ -100,7 +109,8 @@ const securityRecommendations = (analysis, decisions) => {
     if (!analysis.hasExistingCI) {
         recs.push({
             type: 'security',
-            suggestion: 'No existing CI/CD found — review the generated workflow before enabling it on protected branches',
+            title: 'No existing CI/CD detected',
+            suggestion: 'Review the generated workflow before enabling it on protected branches',
             severity: 'low'
         });
     }
