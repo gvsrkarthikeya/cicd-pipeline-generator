@@ -1,0 +1,49 @@
+.site-header {
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.site-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+}
+
+.site-header-app .site-header-inner {
+  height: 74px;
+}
+
+.site-header-nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.site-header-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-heading);
+  transition: color 0.15s ease;
+}
+
+.site-header-link:hover {
+  color: var(--primary);
+}
+
+.site-header-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-heading);
+}
