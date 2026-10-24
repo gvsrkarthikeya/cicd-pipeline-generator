@@ -3,7 +3,7 @@ import { protect } from '../middleware/auth.js';
 import supabase from '../lib/supabase.js';
 import { analyzeRepo } from '../core/analyzer.js';
 import { generateAndSavePipeline } from '../core/pipelineService.js';
-import { verifyRepoAccess } from '../lib/github.js';
+import { verifyRepoAccess, getDefaultBranch } from '../lib/github.js';
 
 const router = Router();
 
@@ -77,7 +77,7 @@ router.delete('/:id', protect, async (req, res) => {
 
 // POST /api/repos — add a new repo: analyze it and save the result
 router.post('/', protect, async (req, res) => {
-  const { repoUrl, branch = 'main', isPrivate = false, githubToken } = req.body;
+  const { repoUrl, branch: branchInput, isPrivate = false, githubToken } = req.body;
 
   if (!repoUrl) return res.status(400).json({ error: 'repoUrl is required' });
   if (isPrivate && !githubToken) {
@@ -85,6 +85,11 @@ router.post('/', protect, async (req, res) => {
   }
 
   try {
+    // When the user leaves the branch field blank, resolve the repo's actual
+    // default branch (e.g. "master" for expressjs/express) instead of
+    // assuming "main", which 404s on repos that still default to "master".
+    const branch = branchInput?.trim() || (await getDefaultBranch(repoUrl, isPrivate ? githubToken : null));
+
     const analysis = await analyzeRepo(repoUrl, branch, isPrivate ? githubToken : null);
     if (!analysis.success) return res.status(400).json({ error: analysis.error });
 

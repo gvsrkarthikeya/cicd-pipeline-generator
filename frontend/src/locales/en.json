@@ -269,6 +269,8 @@
       "copied": "Copied",
       "download": "Download",
       "share": "Share",
+      "shared": "Link copied",
+      "shareError": "Unable to generate a share link.",
       "editorTitle": "Custom Step Editor",
       "editorEditTitle": "Edit Step",
       "manageTitle": "Manage Custom Steps",

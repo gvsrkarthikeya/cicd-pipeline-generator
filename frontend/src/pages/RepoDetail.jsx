@@ -395,6 +395,8 @@ function PipelineTab({ repoId, pipeline, onChanged }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [shared, setShared] = useState(false);
   const [editingStep, setEditingStep] = useState(null);
   const [deletingStep, setDeletingStep] = useState(null);
 
@@ -425,7 +427,23 @@ function PipelineTab({ repoId, pipeline, onChanged }) {
   }
 
   async function handleShare() {
-    await navigator.clipboard.writeText(pipeline.yaml_content);
+    setSharing(true);
+    setError('');
+    try {
+      const { data } = await api.get(`/history/${repoId}`);
+      const latest = data.history?.[0];
+      if (!latest) throw new Error(t('repoDetail.pipeline.shareError'));
+
+      const { data: shareData } = await api.post(`/history/${latest.id}/share`);
+      const link = `${window.location.origin}/share/${shareData.shareId}`;
+      await navigator.clipboard.writeText(link);
+      setShared(true);
+      setTimeout(() => setShared(false), 1500);
+    } catch (err) {
+      setError(err?.response?.data?.error ?? err.message ?? t('repoDetail.pipeline.shareError'));
+    } finally {
+      setSharing(false);
+    }
   }
 
   function startEdit(name) {
@@ -499,16 +517,16 @@ function PipelineTab({ repoId, pipeline, onChanged }) {
           <span className="yaml-card-title">{t('repoDetail.pipeline.yamlTitle')}</span>
           <div className="yaml-card-actions">
             <button type="button" className="yaml-action" onClick={handleCopy}>
-              <CopyIcon />
+              {copied ? <CheckIcon /> : <CopyIcon />}
               {copied ? t('repoDetail.pipeline.copied') : t('repoDetail.pipeline.copy')}
             </button>
             <button type="button" className="yaml-action" onClick={handleDownload}>
               <DownloadIcon />
               {t('repoDetail.pipeline.download')}
             </button>
-            <button type="button" className="yaml-action" onClick={handleShare}>
-              <ShareIcon />
-              {t('repoDetail.pipeline.share')}
+            <button type="button" className="yaml-action" onClick={handleShare} disabled={sharing}>
+              {shared ? <CheckIcon /> : <ShareIcon />}
+              {shared ? t('repoDetail.pipeline.shared') : t('repoDetail.pipeline.share')}
             </button>
           </div>
         </div>
