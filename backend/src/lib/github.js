@@ -47,6 +47,22 @@ export const verifyRepoAccess = async (repoUrl, token) => {
 };
 
 
+// Resolve a repo's actual default branch (e.g. "main" vs "master") so
+// callers don't have to guess when the user leaves the branch field blank.
+export const getDefaultBranch = async (repoUrl, token = null) => {
+    const { owner, repo } = parseRepoUrl(repoUrl);
+    const octokit = getOctokit(token);
+
+    try {
+        const { data } = await octokit.rest.repos.get({ owner, repo });
+        return data.default_branch;
+    } catch (err) {
+        if (err.status === 404) throw new Error('Repository not found or no access');
+        if (err.status === 401) throw new Error('Invalid or missing token for private repo');
+        throw new Error(`GitHub API error: ${err.message}`);
+    }
+};
+
 // Fetch complete file tree of a repo
 export const getFileTree = async (repoUrl, branch = 'main', token = null) => {
     const { owner, repo } = parseRepoUrl(repoUrl);
