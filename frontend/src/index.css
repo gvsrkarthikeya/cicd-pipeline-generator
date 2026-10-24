@@ -314,6 +314,12 @@ input {
   box-shadow: 0 0 0 3px rgba(67, 79, 97, 0.12);
 }
 
+.field-input:disabled {
+  background: var(--bg-muted, #f3f4f6);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
 .form-error {
   padding: 10px 12px;
   border: 1px solid #fecaca;
