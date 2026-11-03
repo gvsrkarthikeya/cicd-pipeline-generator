@@ -117,8 +117,11 @@ export const getFileContent = async (repoUrl, filePath, branch = 'main', token =
     }
 };
 
-// Fetch multiple key files at once
-export const getKeyFiles = async (repoUrl, branch = 'main', token = null) => {
+// Fetch multiple key files at once. When `dir` is given (e.g. "backend"),
+// the files are read from that sub-directory, but the returned keys stay
+// relative to it ("requirements.txt", not "backend/requirements.txt") so
+// callers can treat a sub-project exactly like a repo root.
+export const getKeyFiles = async (repoUrl, branch = 'main', token = null, dir = '') => {
     const keyFiles = [
         'package.json',
         'requirements.txt',
@@ -133,10 +136,11 @@ export const getKeyFiles = async (repoUrl, branch = 'main', token = null) => {
     ];
 
     const results = {};
+    const prefix = dir ? `${dir.replace(/\/$/, '')}/` : '';
 
     await Promise.all(
         keyFiles.map(async (file) => {
-            const content = await getFileContent(repoUrl, file, branch, token);
+            const content = await getFileContent(repoUrl, `${prefix}${file}`, branch, token);
             if (content !== null) {
                 results[file] = content;
             }

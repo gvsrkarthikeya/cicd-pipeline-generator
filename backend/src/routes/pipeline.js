@@ -12,7 +12,7 @@ const router = Router();
 // POST /api/pipeline/generate — run the full core engine for a saved repo
 // and persist the generated pipeline
 router.post('/generate', protect, async (req, res) => {
-  const { repoId, branch: branchOverride } = req.body;
+  const { repoId, branch: branchOverride, preserveRecommendations } = req.body;
 
   if (!repoId) return res.status(400).json({ error: 'repoId is required' });
 
@@ -43,7 +43,8 @@ router.post('/generate', protect, async (req, res) => {
       repoUrl: repo.repo_url,
       branch,
       userId: req.userId,
-      githubToken: repo.is_private ? repo.github_token : null
+      githubToken: repo.is_private ? repo.github_token : null,
+      preserveRecommendations: Boolean(preserveRecommendations)
     });
 
     if (!result.success) return res.status(400).json({ error: result.error });

@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { dump } from 'js-yaml';
-import { applyRecommendation, APPLIABLE_RECOMMENDATION_TITLES } from '../applyRecommendation.js';
+import {
+  applyRecommendation,
+  APPLIABLE_RECOMMENDATION_TITLES,
+  restoreAppliedRecommendations,
+} from '../applyRecommendation.js';
 
 const nodeWorkflow = () =>
   dump({
@@ -57,6 +61,14 @@ describe('applyRecommendation', () => {
     const { yaml, description } = applyRecommendation(nodeWorkflow(), 'No linter detected');
     expect(description).toMatch(/Run lint/);
     expect(yaml).toMatch(/npx eslint \./);
+  });
+
+  it('restores previously applied recommendations on a regenerated workflow', () => {
+    const original = nodeWorkflow();
+    const regenerated = restoreAppliedRecommendations(original, ['Add dependency caching', 'No linter detected']);
+
+    expect(regenerated).toMatch(/cache: npm/);
+    expect(regenerated).toMatch(/Run lint/);
   });
 
   it('throws when a lint step already exists', () => {

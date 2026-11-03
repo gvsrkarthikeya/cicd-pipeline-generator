@@ -61,6 +61,37 @@ describe('RepoDetail', () => {
     expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
   });
 
+  it('explains an unknown stack instead of showing a blank overview', async () => {
+    api.get.mockImplementation((url) => {
+      if (url === '/repos/r1') {
+        return Promise.resolve({
+          data: {
+            repo: {
+              id: 'r1',
+              repo_url: 'https://github.com/acme/mystery',
+              branch: 'main',
+              detected_stack: {
+                success: true,
+                analysis: { language: null, confidence: 0.3 },
+                reasoning: [{ step: 'language_detection', inference: 'Unknown stack — generic pipeline will be generated', confidence: 0.3 }],
+              },
+              last_analyzed_at: new Date().toISOString(),
+            },
+          },
+        });
+      }
+      if (url === '/pipeline/r1') {
+        return Promise.resolve({ data: { pipeline: null } });
+      }
+      return Promise.reject(new Error('unexpected url ' + url));
+    });
+
+    renderRepoDetail();
+
+    expect(await screen.findByText(/No supported stack was detected/)).toBeInTheDocument();
+    expect(screen.getByText(/Unknown stack — generic pipeline/)).toBeInTheDocument();
+  });
+
   it('switches to the history tab and loads history lazily', async () => {
     api.get.mockImplementation((url) => {
       if (url === '/repos/r1') {

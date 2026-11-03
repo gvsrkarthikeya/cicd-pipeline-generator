@@ -39,11 +39,38 @@ describe('repoStackSummary', () => {
     const summary = repoStackSummary({ analysis: { language: 'python', framework: 'flask', hasDocker: false } });
     expect(summary).toBe('Python + Flask');
   });
+
+  it('lists the languages of a monorepo', () => {
+    const summary = repoStackSummary({
+      analysis: {
+        language: null,
+        subprojects: [{ path: 'backend', language: 'python' }, { path: 'frontend', language: 'nodejs' }],
+      },
+    });
+    expect(summary).toBe('Monorepo: Python + Node.js');
+  });
+
+  it('reports an unknown stack when analysis found nothing', () => {
+    expect(repoStackSummary({ analysis: { language: null } })).toBe('Unknown stack');
+  });
 });
 
 describe('repoStackChips', () => {
   it('returns an empty array when no analysis is present', () => {
     expect(repoStackChips(null)).toEqual([]);
+  });
+
+  it('returns one chip per monorepo sub-project', () => {
+    const chips = repoStackChips({
+      analysis: {
+        language: null,
+        subprojects: [
+          { path: 'backend', language: 'python', framework: 'fastapi', hasDocker: true },
+          { path: 'frontend', language: 'nodejs', framework: 'react', hasDocker: false },
+        ],
+      },
+    });
+    expect(chips).toEqual(['backend: Python + FastAPI + Docker', 'frontend: Node.js + React']);
   });
 
   it('includes labeled chips for every detected signal, skipping nulls', () => {

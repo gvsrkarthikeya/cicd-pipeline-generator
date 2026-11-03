@@ -3,6 +3,34 @@
   padding: 32px 0 56px;
 }
 
+/* ---------- Re-run confirmation modal ---------- */
+
+.modal.rerun-modal {
+  max-width: 480px;
+  padding: 28px;
+}
+
+.rerun-modal .modal-head {
+  margin-bottom: 4px;
+}
+
+.rerun-modal .modal-subtitle {
+  margin-top: 12px;
+  line-height: 1.6;
+}
+
+.rerun-modal-actions {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.rerun-modal-actions .btn {
+  width: 100%;
+  justify-content: center;
+}
+
 .repo-detail-breadcrumb {
   display: flex;
   align-items: center;
@@ -137,6 +165,13 @@
 .overview-card-title {
   font-size: 14px;
   margin-bottom: 14px;
+}
+
+.overview-card-note {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted, #6b7280);
 }
 
 .stack-chip-list {
