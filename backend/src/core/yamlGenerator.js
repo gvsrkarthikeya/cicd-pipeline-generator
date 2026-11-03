@@ -77,6 +77,34 @@ const buildDeploymentStep = (decisions) => {
     return placeholders[deploymentStrategy] || placeholders.generic;
 };
 
+// Build one workflow job (steps + deployment placeholder) from a set of
+// decisions. For a monorepo sub-project, `projectPath` scopes the job to that
+// folder and suffixes step names so they stay unique across the workflow.
+const buildJob = (decisions, projectPath = null) => {
+    const steps = [...buildSteps(decisions), buildDeploymentStep(decisions)];
+
+    if (!projectPath) {
+        return { 'runs-on': 'ubuntu-latest', steps };
+    }
+
+    return {
+        'runs-on': 'ubuntu-latest',
+        defaults: { run: { 'working-directory': projectPath } },
+        steps: steps.map((step) => ({ ...step, name: `${step.name} (${projectPath})` }))
+    };
+};
+
+// Turn a folder path into a valid, unique GitHub Actions job id
+const toJobId = (projectPath, usedIds) => {
+    let id = projectPath.replace(/[^A-Za-z0-9_-]/g, '-');
+    if (!/^[A-Za-z_]/.test(id)) id = `_${id}`;
+
+    let candidate = id;
+    for (let n = 2; usedIds.has(candidate); n += 1) candidate = `${id}-${n}`;
+    usedIds.add(candidate);
+    return candidate;
+};
+
 // Main entry point — takes the inference engine's { decisions, ... } output
 // and returns a validated GitHub Actions YAML string
 export const generateYaml = (inferenceResult, repoName = 'pipeline') => {
@@ -89,22 +117,49 @@ export const generateYaml = (inferenceResult, repoName = 'pipeline') => {
 
     const { decisions } = inferenceResult;
     const reasoning = [];
+    const jobs = {};
 
-    const jobSteps = buildSteps(decisions);
-    reasoning.push({
-        step: 'yaml_steps',
-        signal: `Resolved steps: ${decisions.steps.join(', ')}`,
-        inference: `Generated ${jobSteps.length} job step(s)`,
-        confidence: inferenceResult.confidence
-    });
+    if (decisions.projects?.length) {
+        const usedIds = new Set();
+        for (const project of decisions.projects) {
+            jobs[toJobId(project.path, usedIds)] = buildJob(project, project.path);
+        }
 
-    jobSteps.push(buildDeploymentStep(decisions));
-    reasoning.push({
-        step: 'yaml_deployment',
-        signal: `Deployment strategy: ${decisions.deploymentStrategy}`,
-        inference: 'Added deployment placeholder step matching the resolved strategy',
-        confidence: inferenceResult.confidence
-    });
+        const stepCount = Object.values(jobs).reduce((sum, job) => sum + job.steps.length, 0);
+
+        reasoning.push({
+            step: 'yaml_steps',
+            signal: `Resolved steps per project: ${decisions.projects
+                .map((p) => `${p.path} (${p.steps.join(', ')})`)
+                .join('; ')}`,
+            inference: `Generated ${Object.keys(jobs).length} job(s) with ${stepCount} step(s) in total`,
+            confidence: inferenceResult.confidence
+        });
+        reasoning.push({
+            step: 'yaml_deployment',
+            signal: `Deployment strategies: ${decisions.projects
+                .map((p) => `${p.path} → ${p.deploymentStrategy}`)
+                .join(', ')}`,
+            inference: 'Added a deployment placeholder step to each project job matching its resolved strategy',
+            confidence: inferenceResult.confidence
+        });
+    } else {
+        jobs.build = buildJob(decisions);
+
+        reasoning.push({
+            step: 'yaml_steps',
+            signal: `Resolved steps: ${decisions.steps.join(', ')}`,
+            // the deployment placeholder is appended after the resolved steps
+            inference: `Generated ${jobs.build.steps.length - 1} job step(s)`,
+            confidence: inferenceResult.confidence
+        });
+        reasoning.push({
+            step: 'yaml_deployment',
+            signal: `Deployment strategy: ${decisions.deploymentStrategy}`,
+            inference: 'Added deployment placeholder step matching the resolved strategy',
+            confidence: inferenceResult.confidence
+        });
+    }
 
     const workflow = {
         name: `${repoName} CI/CD`,
@@ -112,12 +167,7 @@ export const generateYaml = (inferenceResult, repoName = 'pipeline') => {
             push: { branches: ['main'] },
             pull_request: { branches: ['main'] }
         },
-        jobs: {
-            build: {
-                'runs-on': 'ubuntu-latest',
-                steps: jobSteps
-            }
-        }
+        jobs
     };
 
     const yamlString = dump(workflow, { noRefs: true, lineWidth: -1 });

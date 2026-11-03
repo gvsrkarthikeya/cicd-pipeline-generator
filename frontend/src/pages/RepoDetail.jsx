@@ -13,6 +13,7 @@ import {
   ShareIcon,
   ShieldAlertIcon,
   UndoIcon,
+  XIcon,
 } from '../components/icons';
 import api from '../lib/api';
 import { t } from '../lib/i18n';
@@ -29,6 +30,11 @@ import {
 import './RepoDetail.css';
 
 const TABS = ['overview', 'pipeline', 'history', 'recommendations'];
+const APPLIED_RECOMMENDATION_TITLES = [
+  'Add dependency caching',
+  'Scope workflow permissions',
+  'No linter detected',
+];
 
 export default function RepoDetail() {
   const { repoId } = useParams();
@@ -43,6 +49,8 @@ export default function RepoDetail() {
   const [rerunning, setRerunning] = useState(false);
   const [editingBranch, setEditingBranch] = useState(false);
   const [branchInput, setBranchInput] = useState('');
+  const [rerunConfirmOpen, setRerunConfirmOpen] = useState(false);
+  const [pendingRerunBranch, setPendingRerunBranch] = useState(null);
 
   const loadRepo = useCallback(async () => {
     const { data } = await api.get(`/repos/${repoId}`);
@@ -111,13 +119,16 @@ export default function RepoDetail() {
     };
   }, [activeTab, history, recommendations, repoId]);
 
-  async function handleRerun(branchOverride) {
+  async function runRerun(branchOverride, preserveRecommendations) {
     setRerunning(true);
     setError('');
+    setRerunConfirmOpen(false);
+    setPendingRerunBranch(null);
     try {
       await api.post('/pipeline/generate', {
         repoId,
         ...(branchOverride ? { branch: branchOverride } : {}),
+        preserveRecommendations,
       });
       await Promise.all([loadRepo(), loadPipeline()]);
       setHistory(null);
@@ -128,6 +139,21 @@ export default function RepoDetail() {
     } finally {
       setRerunning(false);
     }
+  }
+
+  async function handleRerun(branchOverride) {
+    const historyEntries = history ?? (await api.get(`/history/${repoId}`).then(({ data }) => data.history ?? []));
+    const hasAppliedRecommendations = historyEntries.some(
+      (entry) => entry?.action === 'EDIT' && APPLIED_RECOMMENDATION_TITLES.includes(entry.step_name)
+    );
+
+    if (hasAppliedRecommendations) {
+      setPendingRerunBranch(branchOverride ?? null);
+      setRerunConfirmOpen(true);
+      return;
+    }
+
+    await runRerun(branchOverride, false);
   }
 
   function startEditBranch() {
@@ -284,6 +310,62 @@ export default function RepoDetail() {
       </main>
 
       <SiteFooter variant="app" />
+
+      {rerunConfirmOpen && (
+        <div
+          className="modal-backdrop"
+          onClick={() => setRerunConfirmOpen(false)}
+          role="presentation"
+        >
+          <div
+            className="card modal rerun-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="rerun-confirm-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="modal-head">
+              <h2 id="rerun-confirm-title" className="modal-title">
+                {t('repoDetail.rerunConfirmTitle')}
+              </h2>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={() => setRerunConfirmOpen(false)}
+                aria-label={t('common.cancel')}
+              >
+                <XIcon size={16} />
+              </button>
+            </div>
+
+            <p className="modal-subtitle">{t('repoDetail.rerunConfirmSubtitle')}</p>
+
+            <div className="modal-actions rerun-modal-actions">
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => runRerun(pendingRerunBranch, true)}
+              >
+                {t('repoDetail.rerunConfirmReapply')}
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => runRerun(pendingRerunBranch, false)}
+              >
+                {t('repoDetail.rerunConfirmDiscard')}
+              </button>
+              <button
+                type="button"
+                className="btn btn-muted"
+                onClick={() => setRerunConfirmOpen(false)}
+              >
+                {t('common.cancel')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -329,8 +411,9 @@ function OverviewTab({ repo, pipeline }) {
   const reasoning = pipeline?.reasoning ?? repo.detected_stack?.reasoning ?? [];
   const scores = reasoningConfidenceScores(reasoning);
   const trail = reasoningTrailItems(reasoning);
+  const hasAnalysis = Boolean(repo.detected_stack?.analysis);
 
-  if (!chips.length) {
+  if (!hasAnalysis) {
     return <p className="dashboard-state">{t('repoDetail.overview.empty')}</p>;
   }
 
@@ -342,13 +425,17 @@ function OverviewTab({ repo, pipeline }) {
       <div className="overview-grid">
         <div className="card overview-card">
           <h3 className="overview-card-title">{t('repoDetail.overview.stackTitle')}</h3>
-          <ul className="stack-chip-list">
-            {chips.map((chip) => (
-              <li key={chip} className="stack-chip">
-                {chip}
-              </li>
-            ))}
-          </ul>
+          {chips.length > 0 ? (
+            <ul className="stack-chip-list">
+              {chips.map((chip) => (
+                <li key={chip} className="stack-chip">
+                  {chip}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="overview-card-note">{t('repoDetail.overview.unknownStack')}</p>
+          )}
         </div>
 
         {scores.length > 0 && (
@@ -375,8 +462,8 @@ function OverviewTab({ repo, pipeline }) {
         <div className="card overview-reasoning">
           <h3 className="overview-card-title">{t('repoDetail.overview.reasoningTitle')}</h3>
           <ul className="reasoning-list">
-            {trail.map((item) => (
-              <li key={item}>
+            {trail.map((item, index) => (
+              <li key={`${index}-${item}`}>
                 <CheckIcon />
                 <span>{item}</span>
               </li>

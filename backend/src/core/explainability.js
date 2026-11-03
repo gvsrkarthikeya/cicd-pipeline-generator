@@ -27,7 +27,7 @@ const CATEGORY_MAP = {
     linter_detection: 'detection',
     deployment_detection: 'detection',
     existing_ci: 'detection',
-    step_selection: 'pipeline_steps',
+    monorepo_detection: 'detection',    step_selection: 'pipeline_steps',
     deployment_strategy: 'pipeline_steps',
     trigger_selection: 'pipeline_steps',
     yaml_steps: 'yaml_output',

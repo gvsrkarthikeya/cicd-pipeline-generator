@@ -10,20 +10,44 @@ const CACHE_KEY = {
     python: 'pip'
 };
 
+// A repo is either a single project or a monorepo with several sub-projects;
+// recommendations are evaluated per project and then merged.
+const projectsOf = (analysis, decisions) => (
+    analysis.subprojects?.length
+        ? analysis.subprojects
+        : [{ ...analysis, language: analysis.language ?? decisions.language }]
+);
+
+// " (backend, frontend)" for monorepo projects, empty for a single project
+const whereSuffix = (projects) => {
+    const paths = projects.map((p) => p.path).filter(Boolean);
+    return paths.length ? ` (${paths.join(', ')})` : '';
+};
+
 // Performance suggestions: dependency caching, matrix builds, parallel jobs
 const performanceRecommendations = (analysis, decisions) => {
     const recs = [];
+    const projects = projectsOf(analysis, decisions);
+    const isMonorepo = Boolean(analysis.subprojects?.length);
 
-    if (decisions.language && CACHE_KEY[decisions.language]) {
+    const cacheable = projects.filter((p) => p.language && CACHE_KEY[p.language]);
+    const javaProjects = projects.filter((p) => p.language === 'java');
+
+    if (isMonorepo && (cacheable.length || javaProjects.length)) {
         recs.push({
             type: 'performance',
             title: 'Add dependency caching',
-            suggestion: `Enable dependency caching (cache: '${CACHE_KEY[decisions.language]}') in the setup action to speed up repeated installs`,
+            suggestion: `Enable dependency caching in the setup action of each project${whereSuffix([...cacheable, ...javaProjects])} to speed up repeated installs`,
             severity: 'medium'
         });
-    }
-
-    if (decisions.language === 'java') {
+    } else if (cacheable.length) {
+        recs.push({
+            type: 'performance',
+            title: 'Add dependency caching',
+            suggestion: `Enable dependency caching (cache: '${CACHE_KEY[cacheable[0].language]}') in the setup action to speed up repeated installs`,
+            severity: 'medium'
+        });
+    } else if (javaProjects.length) {
         recs.push({
             type: 'performance',
             title: 'Add dependency caching',
@@ -41,7 +65,7 @@ const performanceRecommendations = (analysis, decisions) => {
         });
     }
 
-    if (analysis.projectType === 'backend' && decisions.language) {
+    if (projects.some((p) => p.projectType === 'backend' && p.language)) {
         recs.push({
             type: 'performance',
             title: 'Parallelize lint and test',
@@ -54,25 +78,34 @@ const performanceRecommendations = (analysis, decisions) => {
 };
 
 // Linting suggestions
-const lintingRecommendations = (analysis) => {
+const lintingRecommendations = (analysis, decisions) => {
     const recs = [];
+    const projects = projectsOf(analysis, decisions);
 
-    if (!analysis.linter) {
+    const withoutLinter = projects.filter((p) => !p.linter);
+    if (withoutLinter.length) {
+        const pythonOnly = withoutLinter.every((p) => p.language === 'python');
+        const noPython = withoutLinter.every((p) => p.language !== 'python');
+        const advice = pythonOnly
+            ? 'flake8 or ruff'
+            : noPython
+                ? 'ESLint or Prettier'
+                : 'ESLint or Prettier (JavaScript) and flake8 or ruff (Python)';
+
         recs.push({
             type: 'linting',
             title: 'No linter detected',
-            suggestion: analysis.language === 'python'
-                ? 'Your pipeline has no lint step. Consider adding flake8 or ruff to catch issues early.'
-                : 'Your pipeline has no lint step. Consider adding ESLint or Prettier to catch issues early.',
+            suggestion: `Your pipeline has no lint step${whereSuffix(withoutLinter)}. Consider adding ${advice} to catch issues early.`,
             severity: 'medium'
         });
     }
 
-    if (!analysis.testFramework) {
+    const withoutTests = projects.filter((p) => !p.testFramework);
+    if (withoutTests.length) {
         recs.push({
             type: 'linting',
             title: 'No test framework detected',
-            suggestion: 'Consider adding one (Jest/Mocha/PyTest/JUnit) so CI can catch regressions',
+            suggestion: `Consider adding one (Jest/Mocha/PyTest/JUnit)${whereSuffix(withoutTests)} so CI can catch regressions`,
             severity: 'high'
         });
     }
@@ -139,7 +172,7 @@ export const recommendOptimizations = (analyzerResult, inferenceResult) => {
 
     const recommendations = [
         ...performanceRecommendations(analysis, decisions),
-        ...lintingRecommendations(analysis),
+        ...lintingRecommendations(analysis, decisions),
         ...securityRecommendations(analysis, decisions)
     ];
 

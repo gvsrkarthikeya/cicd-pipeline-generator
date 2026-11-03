@@ -188,6 +188,33 @@ const computeOverallConfidence = (analysisConfidence, trail) => {
     return Number(((analysisConfidence * 0.6) + (trailAvg * 0.4)).toFixed(2));
 };
 
+// Decide steps, runtime, commands and deployment for ONE project (the repo
+// root, or one folder of a monorepo). Decision-trail entries go into `trail`.
+const inferProject = (analysis, trail) => {
+    const steps = buildLanguageSteps(analysis, trail);
+    const deploymentStrategy = resolveDeploymentStrategy(analysis, trail);
+
+    const language = analysis.language;
+
+    return {
+        language,
+        runtimeVersion: language ? DEFAULT_VERSIONS[language] : null,
+        buildTool: analysis.buildTool,
+        framework: analysis.framework,
+        projectType: analysis.projectType,
+        steps,
+        deploymentStrategy,
+        commands: language && COMMANDS[language] ? COMMANDS[language] : null
+    };
+};
+
+// Tag a trail entry with the sub-project it belongs to
+const scopeEntry = (entry, dir) => ({
+    ...entry,
+    signal: entry.signal ? `[${dir}] ${entry.signal}` : entry.signal,
+    inference: entry.inference ? `[${dir}] ${entry.inference}` : entry.inference
+});
+
 // Main entry point — takes the analyzer's { analysis, reasoning } output
 // and returns concrete pipeline decisions + a combined confidence score
 export const runInferenceEngine = (analyzerResult, branch = 'main') => {
@@ -201,24 +228,35 @@ export const runInferenceEngine = (analyzerResult, branch = 'main') => {
     const { analysis } = analyzerResult;
     const trail = [];
 
-    const steps = buildLanguageSteps(analysis, trail);
-    const deploymentStrategy = resolveDeploymentStrategy(analysis, trail);
-    const triggers = resolveTriggers(branch, trail);
+    let decisions;
 
-    const language = analysis.language;
-    const runtimeVersion = language ? DEFAULT_VERSIONS[language] : null;
+    if (analysis.subprojects?.length) {
+        // Monorepo: decide steps/commands/deployment for each sub-project
+        const projects = analysis.subprojects.map((project) => {
+            const projectTrail = [];
+            const projectDecisions = inferProject(project, projectTrail);
+            trail.push(...projectTrail.map((entry) => scopeEntry(entry, project.path)));
+            return { path: project.path, ...projectDecisions };
+        });
 
-    const decisions = {
-        language,
-        runtimeVersion,
-        buildTool: analysis.buildTool,
-        framework: analysis.framework,
-        projectType: analysis.projectType,
-        steps,
-        deploymentStrategy,
-        triggers,
-        commands: language && COMMANDS[language] ? COMMANDS[language] : null
-    };
+        decisions = {
+            language: null,
+            runtimeVersion: null,
+            buildTool: null,
+            framework: null,
+            projectType: analysis.projectType,
+            steps: [...new Set(projects.flatMap((project) => project.steps))],
+            deploymentStrategy: analysis.deploymentStrategy,
+            triggers: resolveTriggers(branch, trail),
+            commands: null,
+            projects
+        };
+    } else {
+        decisions = {
+            ...inferProject(analysis, trail),
+            triggers: resolveTriggers(branch, trail)
+        };
+    }
 
     const confidence = computeOverallConfidence(analysis.confidence, trail);
 

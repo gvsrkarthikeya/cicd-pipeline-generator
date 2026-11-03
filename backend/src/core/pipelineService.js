@@ -9,6 +9,7 @@ import { runInferenceEngine } from './inferenceEngine.js';
 import { generateYaml } from './yamlGenerator.js';
 import { explainDecision } from './explainability.js';
 import { recommendOptimizations } from './recommender.js';
+import { APPLIABLE_RECOMMENDATION_TITLES, restoreAppliedRecommendations } from './applyRecommendation.js';
 
 export async function generateAndSavePipeline({
   repoId,
@@ -16,7 +17,8 @@ export async function generateAndSavePipeline({
   branch,
   userId,
   githubToken = null,
-  existingAnalysis = null
+  existingAnalysis = null,
+  preserveRecommendations = false
 }) {
   const analysis = existingAnalysis ?? (await analyzeRepo(repoUrl, branch, githubToken));
   if (!analysis.success) {
@@ -37,6 +39,21 @@ export async function generateAndSavePipeline({
   const explanation = explainDecision(analysis, inference, pipeline);
   const optimizations = recommendOptimizations(analysis, inference);
 
+  let finalYaml = pipeline.yaml;
+  if (preserveRecommendations) {
+    const { data: previousRecommendations, error: historyError } = await supabase
+      .from('history')
+      .select('step_name')
+      .eq('repo_id', repoId)
+      .in('step_name', APPLIABLE_RECOMMENDATION_TITLES)
+      .order('created_at', { ascending: true });
+
+    if (!historyError && previousRecommendations?.length) {
+      const titles = [...new Set(previousRecommendations.map((entry) => entry.step_name).filter(Boolean))];
+      finalYaml = restoreAppliedRecommendations(finalYaml, titles);
+    }
+  }
+
   await supabase
     .from('repos')
     .update({ detected_stack: analysis, last_analyzed_at: new Date().toISOString() })
@@ -46,7 +63,7 @@ export async function generateAndSavePipeline({
     .from('pipelines')
     .insert({
       repo_id: repoId,
-      yaml_content: pipeline.yaml,
+      yaml_content: finalYaml,
       reasoning: explanation.trail
     })
     .select('*')
@@ -59,7 +76,7 @@ export async function generateAndSavePipeline({
     user_id: userId,
     action: 'ADD',
     step_name: 'pipeline_generated',
-    after_state: { yaml: pipeline.yaml }
+    after_state: { yaml: finalYaml }
   });
 
   return {

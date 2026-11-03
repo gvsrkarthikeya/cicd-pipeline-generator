@@ -17,18 +17,3 @@
   font-size: 13px;
   color: var(--text);
 }
-
-.site-footer-links {
-  display: flex;
-  gap: 20px;
-}
-
-.site-footer-links a {
-  font-size: 13px;
-  color: var(--text);
-  transition: color 0.15s ease;
-}
-
-.site-footer-links a:hover {
-  color: var(--text-heading);
-}

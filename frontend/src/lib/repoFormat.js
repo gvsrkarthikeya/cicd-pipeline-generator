@@ -32,6 +32,11 @@ export function repoStackSummary(detectedStack) {
   const analysis = detectedStack?.analysis;
   if (!analysis) return t('repo.notAnalyzed');
 
+  if (analysis.subprojects?.length) {
+    const languages = [...new Set(analysis.subprojects.map((p) => label(p.language)).filter(Boolean))];
+    return `${t('repo.monorepo')}: ${languages.join(' + ')}`;
+  }
+
   const parts = [
     label(analysis.language),
     analysis.hasDocker ? 'Docker' : label(analysis.framework) ?? label(analysis.buildTool),
@@ -43,6 +48,18 @@ export function repoStackSummary(detectedStack) {
 export function repoStackChips(detectedStack) {
   const analysis = detectedStack?.analysis;
   if (!analysis) return [];
+
+  // Monorepo: one chip per sub-project, e.g. "backend: Python + FastAPI + Docker"
+  if (analysis.subprojects?.length) {
+    return analysis.subprojects.map((project) => {
+      const stack = [
+        label(project.language),
+        label(project.framework),
+        project.hasDocker ? 'Docker' : null,
+      ].filter(Boolean);
+      return `${project.path}: ${stack.join(' + ')}`;
+    });
+  }
 
   return [
     label(analysis.language),
