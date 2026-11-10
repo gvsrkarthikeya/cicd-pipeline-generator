@@ -47,6 +47,22 @@ export const verifyRepoAccess = async (repoUrl, token) => {
 };
 
 
+// Resolve a repo's actual default branch (e.g. "main" vs "master") so
+// callers don't have to guess when the user leaves the branch field blank.
+export const getDefaultBranch = async (repoUrl, token = null) => {
+    const { owner, repo } = parseRepoUrl(repoUrl);
+    const octokit = getOctokit(token);
+
+    try {
+        const { data } = await octokit.rest.repos.get({ owner, repo });
+        return data.default_branch;
+    } catch (err) {
+        if (err.status === 404) throw new Error('Repository not found or no access');
+        if (err.status === 401) throw new Error('Invalid or missing token for private repo');
+        throw new Error(`GitHub API error: ${err.message}`);
+    }
+};
+
 // Fetch complete file tree of a repo
 export const getFileTree = async (repoUrl, branch = 'main', token = null) => {
     const { owner, repo } = parseRepoUrl(repoUrl);
@@ -101,8 +117,11 @@ export const getFileContent = async (repoUrl, filePath, branch = 'main', token =
     }
 };
 
-// Fetch multiple key files at once
-export const getKeyFiles = async (repoUrl, branch = 'main', token = null) => {
+// Fetch multiple key files at once. When `dir` is given (e.g. "backend"),
+// the files are read from that sub-directory, but the returned keys stay
+// relative to it ("requirements.txt", not "backend/requirements.txt") so
+// callers can treat a sub-project exactly like a repo root.
+export const getKeyFiles = async (repoUrl, branch = 'main', token = null, dir = '') => {
     const keyFiles = [
         'package.json',
         'requirements.txt',
@@ -117,10 +136,11 @@ export const getKeyFiles = async (repoUrl, branch = 'main', token = null) => {
     ];
 
     const results = {};
+    const prefix = dir ? `${dir.replace(/\/$/, '')}/` : '';
 
     await Promise.all(
         keyFiles.map(async (file) => {
-            const content = await getFileContent(repoUrl, file, branch, token);
+            const content = await getFileContent(repoUrl, `${prefix}${file}`, branch, token);
             if (content !== null) {
                 results[file] = content;
             }

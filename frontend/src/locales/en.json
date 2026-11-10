@@ -36,9 +36,7 @@
     "account": "Account"
   },
   "footer": {
-    "copyright": "© {year} PipelineKit Inc. All rights reserved.",
-    "privacy": "Privacy Policy",
-    "terms": "Terms of Service"
+    "copyright": "© {year} PipelineKit Inc. All rights reserved."
   },
   "home": {
     "hero": {
@@ -244,6 +242,10 @@
     "back": "Repositories",
     "rerun": "Re-run Analysis",
     "rerunning": "Running…",
+    "rerunConfirmTitle": "Re-run analysis?",
+    "rerunConfirmSubtitle": "You have previously applied auto-recommendations to this pipeline. Re-running analysis will regenerate the workflow. Choose whether to reapply those changes or discard them.",
+    "rerunConfirmReapply": "Reapply recommendations",
+    "rerunConfirmDiscard": "Discard and regenerate",
     "lastAnalyzed": "Last analyzed: {time}",
     "loadError": "Unable to load this repository.",
     "tabs": {
@@ -258,7 +260,8 @@
       "stackTitle": "Detected Stack",
       "confidenceTitle": "Confidence Scores",
       "reasoningTitle": "Reasoning Trail",
-      "empty": "Run an analysis to see detected stack details."
+      "empty": "Run an analysis to see detected stack details.",
+      "unknownStack": "No supported stack was detected. Node.js, Python and Java projects are recognised at the repository root or in a top-level folder (for example backend/ and frontend/)."
     },
     "pipeline": {
       "title": "Pipeline",
@@ -269,6 +272,8 @@
       "copied": "Copied",
       "download": "Download",
       "share": "Share",
+      "shared": "Link copied",
+      "shareError": "Unable to generate a share link.",
       "editorTitle": "Custom Step Editor",
       "editorEditTitle": "Edit Step",
       "manageTitle": "Manage Custom Steps",
@@ -321,6 +326,7 @@
   "repo": {
     "notAnalyzed": "Not analyzed yet",
     "unknownStack": "Unknown stack",
+    "monorepo": "Monorepo",
     "never": "Never",
     "justNow": "just now",
     "minutesAgo": "{value}m ago",

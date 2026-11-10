@@ -9,9 +9,9 @@ describe('<SiteFooter />', () => {
     expect(screen.getByText(`© ${year} PipelineKit Inc. All rights reserved.`)).toBeInTheDocument();
   });
 
-  it('renders privacy and terms links', () => {
+  it('does not render privacy or terms links', () => {
     render(<SiteFooter />);
-    expect(screen.getByText('Privacy Policy')).toBeInTheDocument();
-    expect(screen.getByText('Terms of Service')).toBeInTheDocument();
+    expect(screen.queryByText('Privacy Policy')).not.toBeInTheDocument();
+    expect(screen.queryByText('Terms of Service')).not.toBeInTheDocument();
   });
 });

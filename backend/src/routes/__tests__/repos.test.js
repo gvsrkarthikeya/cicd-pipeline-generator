@@ -1,14 +1,14 @@
-import { describe, it, expect, beforeAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
 import express from 'express';
 import request from 'supertest';
 
 vi.mock('../../lib/supabase.js', () => ({ default: { from: () => {} } }));
-vi.mock('../../lib/github.js', () => ({ verifyRepoAccess: vi.fn() }));
+vi.mock('../../lib/github.js', () => ({ verifyRepoAccess: vi.fn(), getDefaultBranch: vi.fn() }));
 vi.mock('../../core/analyzer.js', () => ({ analyzeRepo: vi.fn() }));
 vi.mock('../../core/pipelineService.js', () => ({ generateAndSavePipeline: vi.fn() }));
 
 const supabase = (await import('../../lib/supabase.js')).default;
-const { verifyRepoAccess } = await import('../../lib/github.js');
+const { verifyRepoAccess, getDefaultBranch } = await import('../../lib/github.js');
 const { analyzeRepo } = await import('../../core/analyzer.js');
 const { generateAndSavePipeline } = await import('../../core/pipelineService.js');
 const { mockSupabaseFrom } = await import('./helpers/supabaseMock.js');
@@ -17,6 +17,10 @@ const { generateToken } = await import('../../lib/jwt.js');
 
 beforeAll(() => {
   process.env.JWT_SECRET = 'test-secret';
+});
+
+beforeEach(() => {
+  getDefaultBranch.mockClear();
 });
 
 function buildApp() {
@@ -123,6 +127,7 @@ describe('POST /api/repos', () => {
   });
 
   it('400s when analysis fails', async () => {
+    getDefaultBranch.mockResolvedValueOnce('main');
     analyzeRepo.mockResolvedValueOnce({ success: false, error: 'Repository not found' });
     const res = await request(app)
       .post('/api/repos')
@@ -132,7 +137,39 @@ describe('POST /api/repos', () => {
     expect(res.body.error).toBe('Repository not found');
   });
 
+  it('resolves the default branch via GitHub when none is provided', async () => {
+    getDefaultBranch.mockResolvedValueOnce('master');
+    analyzeRepo.mockResolvedValueOnce({ success: true, analysis: { language: 'nodejs' } });
+    mockSupabaseFrom(supabase, [{ data: { id: 'r1', repo_url: 'https://github.com/a/b', branch: 'master' }, error: null }]);
+    generateAndSavePipeline.mockResolvedValueOnce({ success: true });
+
+    const res = await request(app)
+      .post('/api/repos')
+      .set(authHeader())
+      .send({ repoUrl: 'https://github.com/a/b' });
+
+    expect(res.status).toBe(201);
+    expect(getDefaultBranch).toHaveBeenCalledWith('https://github.com/a/b', null);
+    expect(analyzeRepo).toHaveBeenCalledWith('https://github.com/a/b', 'master', null);
+  });
+
+  it('skips default-branch resolution when a branch is explicitly provided', async () => {
+    analyzeRepo.mockResolvedValueOnce({ success: true, analysis: { language: 'nodejs' } });
+    mockSupabaseFrom(supabase, [{ data: { id: 'r1', repo_url: 'https://github.com/a/b', branch: 'develop' }, error: null }]);
+    generateAndSavePipeline.mockResolvedValueOnce({ success: true });
+
+    const res = await request(app)
+      .post('/api/repos')
+      .set(authHeader())
+      .send({ repoUrl: 'https://github.com/a/b', branch: 'develop' });
+
+    expect(res.status).toBe(201);
+    expect(getDefaultBranch).not.toHaveBeenCalled();
+    expect(analyzeRepo).toHaveBeenCalledWith('https://github.com/a/b', 'develop', null);
+  });
+
   it('creates the repo, auto-generates a pipeline, and returns 201 on success', async () => {
+    getDefaultBranch.mockResolvedValueOnce('main');
     analyzeRepo.mockResolvedValueOnce({ success: true, analysis: { language: 'nodejs' } });
     mockSupabaseFrom(supabase, [{ data: { id: 'r1', repo_url: 'https://github.com/a/b' }, error: null }]);
     generateAndSavePipeline.mockResolvedValueOnce({ success: true });
